@@ -177,6 +177,9 @@ same layout.
 
 ### Principles
 
+- **Use the `question` tool** to ask — do not ask in plain chat text. Offer
+  the user concrete choices (`topology`, `primary/replica`, `SLI`, ...) so
+  answers are fast.
 - **No more than 3-4 questions** in a single round.
 - **Questions by priority**: first things that change the dashboard
   structure (topology), then content (SLI), then details (aggregations,
