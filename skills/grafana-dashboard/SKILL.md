@@ -144,87 +144,32 @@ Possible values:
 
 ---
 
-## Service templates (SERVICE_TEMPLATES)
+## Service templates
 
-### PostgreSQL
+Templates live as separate files under `templates/` (relative to this
+skill's directory). **Before generating for a service, read the matching
+template file** so the panels, PromQL, and thresholds match the exporter
+actually in use.
 
-- **Sections:** Overview, Connections, Queries, Replication, Locks, Resources (Node), WAL/Backups
-- **Key metrics:** `pg_stat_database`, `pg_stat_replication`, `pg_stat_activity`, `pg_locks`, `pg_stat_user_tables`
-- **Alerts:** connection saturation, replication lag, cache hit ratio, transaction wraparound, long-running queries
-- **Variables:** `$role` (primary/replica), `$datname`, `$instance`
+| Service | Template file |
+|---------|---------------|
+| PostgreSQL | `templates/postgresql.md` |
+| MySQL / MariaDB | `templates/mysql.md` |
+| Redis | `templates/redis.md` |
+| Kafka | `templates/kafka.md` |
+| NGINX | `templates/nginx.md` |
+| PowerDNS Authoritative | `templates/powerdns.md` |
+| Node Exporter (linux host) | `templates/node-exporter.md` |
+| Kubernetes Pods | `templates/kubernetes-pods.md` |
+| Generic / unknown | `templates/generic.md` |
 
-### MySQL / MariaDB
-
-- **Sections:** Overview, Connections, Queries, InnoDB, Replication, Resources
-- **Key metrics:** `mysql_global_status_*`, `mysql_global_variables_*`, `mysql_innodb_*`, `mysql_slave_status_*`
-- **Alerts:** connections, threads_running, replica lag, InnoDB history list length
-- **Variables:** `$role`, `$instance`
-
-### Redis
-
-- **Sections:** Overview, Clients, Memory, Commands, Keyspace, Persistence, Replication, Resources
-- **Key metrics:** `redis_connected_clients`, `redis_memory_used_bytes`, `redis_commands_total`, `redis_keyspace_*`, `redis_aof_*`
-- **Alerts:** memory saturation, hit ratio, replication backlog, blocked clients
-- **Variables:** `$role` (master/replica), `$instance`
-
-### Kafka
-
-- **Sections:** Cluster, Brokers, Topics, Partitions, Producers, Consumers, Lag, Resources
-- **Key metrics:** `kafka_server_*`, `kafka_topic_partition_*`, `kafka_consumergroup_lag`, `kafka_log_log_size`
-- **Alerts:** consumer lag, under-replicated partitions, ISR shrink, controller count
-- **Variables:** `$topic`, `$consumergroup`, `$instance`
-
-### NGINX
-
-- **Sections:** Overview, Connections, Requests, Upstream, Cache, Resources
-- **Key metrics:** `nginx_connections_*`, `nginx_http_requests_total`, `nginx_upstream_*`
-- **Alerts:** 5xx rate, upstream failures, active connections, request rate anomalies
-- **Variables:** `$upstream`, `$instance`
-
-### PowerDNS Authoritative
-
-- **Sections:** Overview, Queries, Cache, Backend, Latency, Resources
-- **Key metrics:** `pdns_server_*`, `pdns_recursor_*`, `pdns_cache_*`, `pdns_backend_*`
-- **Alerts:** query rate, cache miss ratio, backend errors, latency p99
-- **Variables:** `$instance`
-
-### Node Exporter (generic host)
-
-- **Sections:** CPU, Memory, Disk, Network, Filesystems, Kernel, Processes
-- **Key metrics:** `node_cpu_*`, `node_memory_*`, `node_disk_*`, `node_network_*`, `node_filesystem_*`
-- **Alerts:** CPU saturation, memory pressure, disk space, disk I/O wait
-- **Variables:** `$instance`, `$mountpoint`, `$device`, `$nic`
-
-Ready-to-use expressions (replace `instance` scoping with the dashboard's
-`$instance` variable where needed):
-
-| Panel | PromQL |
-|-------|--------|
-| CPU usage % | `100 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[$__rate_interval])) * 100` |
-| CPU per mode | `sum by (mode) (rate(node_cpu_seconds_total[$__rate_interval]))` |
-| Memory used % | `(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100` |
-| Memory breakdown | `node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes` |
-| Swap usage % | `node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes * 100` |
-| Disk usage % | `(node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100` |
-| Disk read/write | `rate(node_disk_read_bytes_total[$__rate_interval])` / `rate(node_disk_write_bytes_total[$__rate_interval])` |
-| Disk I/O utilization | `rate(node_disk_io_time_seconds_total[$__rate_interval])` |
-| Network in/out | `rate(node_network_receive_bytes_total[$__rate_interval])` / `rate(node_network_transmit_bytes_total[$__rate_interval])` |
-| Load average vs cores | `node_load1 / count(node_cpu_seconds_total{mode="idle"})` |
-| Processes blocked | `node_procs_blocked` / `node_procs_running` |
-
-### Kubernetes Pods (kube-state-metrics + cAdvisor)
-
-- **Sections:** Pod Overview, CPU/Memory, Restarts, Network, Volumes, Status
-- **Key metrics:** `kube_pod_*`, `kube_container_*`, `container_cpu_*`, `container_memory_*`
-- **Alerts:** CrashLoopBackOff, OOMKilled, CPU throttling, pending pods
-- **Variables:** `$namespace`, `$pod`, `$container`, `$node`
-
-### Generic / unknown service
-
-- **Sections:** Overview (Golden Signals), Saturation, Resources (Node), Errors
-- **Key metrics:** all metrics with the `job_name` prefix
-- **Alerts:** error rate, saturation, latency
-- **Variables:** `$instance`
+Each template defines: panel **Sections**, **Key metrics & PromQL**
+(ready-to-use expressions), **Alerts** (Prometheus rules), and
+**Variables**. Always verify metric names against the exporter version
+and the actual `scrape_configs` before emitting JSON — exporter metric
+families vary (e.g. postgres_exporter, JMX vs kafka_exporter). To add a
+template for a new service, create `templates/<service>.md` following the
+same layout.
 
 ---
 
