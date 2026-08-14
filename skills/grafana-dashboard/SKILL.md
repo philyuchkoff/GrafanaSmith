@@ -248,6 +248,12 @@ the target is unknown, ask in the clarifying round:
 fine into newer Grafana; a too-high number fails on older instances. Do
 not set `"version"` above `1` — Grafana bumps it on the first save.
 
+**`uid` convention** — generate a stable, descriptive uid from the
+service and environment so provisioning and links are predictable:
+`<environment>-<service>-<purpose>`, e.g. `prod-postgresql-overview`,
+`staging-nginx-edge`. If the user already has a dashboard uid, reuse it
+(when iterating) or derive a new one without conflicts.
+
 ### Reference panels
 
 Use these as **structural templates** — every generated panel must follow
