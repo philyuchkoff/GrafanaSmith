@@ -403,8 +403,12 @@ groups:
    `up{job="..."}`.
 3. **Variables substitute correctly** — for each variable, show the user
    an example of the substituted query.
-4. **`gridPos` does not overlap** — `panel.gridPos: {x, y, w, h}`, ensure
-   no overlaps and the y sum does not exceed 24.
+4. **`gridPos` is valid and panels do not overlap** — each
+   `panel.gridPos: {x, y, w, h}` must satisfy `0 <= x`, `x + w <= 24`,
+   `w >= 1`, `h >= 1`. The horizontal axis is limited to 24 columns;
+   `y` is any non-negative integer. Two panels must never share the same
+   area. Collapsed rows use `gridPos: {h: 1, w: 24}` and push the
+   following panels below them.
 5. **`schemaVersion` matches Grafana ≥ 9.x** (use 39 for modern versions).
 
 ---
