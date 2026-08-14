@@ -75,7 +75,7 @@ GrafanaSmith превращает SRE best practices (RED, USE, Golden Signals) 
 
 Генерируемый JSON следует современным конвенциям Grafana:
 
-- `schemaVersion: 39` для Grafana 9–10, `40` для Grafana 11;
+- `schemaVersion` 39 (Grafana 10), 40 (Grafana 11), 41 (Grafana 12), 42 (Grafana 13+ — финальная схема v1);
 - `gridPos` валидируется по реальным правилам сетки (`x + w <= 24`, без пересечений);
 - `$__rate_interval` во всех окнах `rate()` (фиксированные `[5m]` — только в alert-правилах);
 - `unit` задан на каждой панели (`reqps`, `s`, `percentunit`, `bytes`, ...);

@@ -229,7 +229,7 @@ The root object is an exported Grafana dashboard:
   "liveNow": false,
   "panels": [...],
   "refresh": "30s",
-  "schemaVersion": 39,
+  "schemaVersion": 42,
   "tags": ["sre", "service", "<service_type>"],
   "templating": { "list": [...] },
   "time": { "from": "now-6h", "to": "now" },
@@ -244,9 +244,12 @@ The root object is an exported Grafana dashboard:
 
 `schemaVersion` depends on the Grafana version the dashboard targets; if
 the target is unknown, ask in the clarifying round:
-`39` for Grafana 9–10, `40` for Grafana 11. Lower version numbers import
-fine into newer Grafana; a too-high number fails on older instances. Do
-not set `"version"` above `1` — Grafana bumps it on the first save.
+`39` for Grafana 10, `40` for Grafana 11, `41` for Grafana 12, `42` for
+Grafana 13+. Version 42 is the **final schema of the v1 dashboard API** —
+Grafana does not raise it further, so `42` is the safe default for new
+dashboards. Lower version numbers import fine into newer Grafana; a
+too-high number fails on older instances. Do not set `"version"` above
+`1` — Grafana bumps it on the first save.
 
 **`uid` convention** — generate a stable, descriptive uid from the
 service and environment so provisioning and links are predictable:
@@ -536,8 +539,9 @@ groups:
    `y` is any non-negative integer. Two panels must never share the same
    area. Collapsed rows use `gridPos: {h: 1, w: 24}` and push the
    following panels below them.
-5. **`schemaVersion` matches the Grafana version** — `39` for Grafana 9–10,
-   `40` for Grafana 11.
+5. **`schemaVersion` matches the Grafana version** — `39` for Grafana 10,
+   `40` for Grafana 11, `41` for Grafana 12, `42` for Grafana 13+ (final
+   v1 schema).
 
 After emitting the JSON, **close the loop**: ask the user to import the
 dashboard into Grafana and paste any import errors or "metric not found"

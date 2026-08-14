@@ -79,7 +79,7 @@ Every dashboard produced by the skill includes:
 
 The generated JSON follows modern Grafana conventions:
 
-- `schemaVersion: 39` for Grafana 9–10, `40` for Grafana 11;
+- `schemaVersion` 39 (Grafana 10), 40 (Grafana 11), 41 (Grafana 12), 42 (Grafana 13+ — final v1 schema);
 - `gridPos` validated against the real grid rules (`x + w <= 24`, no overlaps);
 - `$__rate_interval` in all `rate()` windows (fixed `[5m]` only in alert rules);
 - `unit` set on every panel (`reqps`, `s`, `percentunit`, `bytes`, ...);
