@@ -294,6 +294,105 @@ The root object is an exported Grafana dashboard:
 }
 ```
 
+### Reference panels
+
+Use these as **structural templates** — every generated panel must follow
+the same field naming (`id`, `type`, `title`, `gridPos`, `targets`,
+`fieldConfig`). Three canonical examples:
+
+**Stat panel (Overview row):**
+
+```json
+{
+  "id": 1,
+  "type": "stat",
+  "title": "QPS",
+  "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+  "datasource": { "type": "prometheus", "uid": "${datasource}" },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "reqps",
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "green", "value": null },
+          { "color": "yellow", "value": 70 },
+          { "color": "red", "value": 90 }
+        ]
+      },
+      "color": { "mode": "thresholds" }
+    },
+    "overrides": []
+  },
+  "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
+  "targets": [
+    {
+      "expr": "sum(rate(<metric>_total[$__rate_interval]))",
+      "legendFormat": "QPS",
+      "refId": "A"
+    }
+  ]
+}
+```
+
+**Timeseries panel (Traffic row):**
+
+```json
+{
+  "id": 2,
+  "type": "timeseries",
+  "title": "Requests by status",
+  "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+  "datasource": { "type": "prometheus", "uid": "${datasource}" },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "reqps",
+      "custom": { "lineWidth": 2, "fillOpacity": 20, "drawStyle": "line", "showPoints": "never" }
+    },
+    "overrides": []
+  },
+  "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } },
+  "targets": [
+    {
+      "expr": "sum by (status) (rate(<metric>_total[$__rate_interval]))",
+      "legendFormat": "{{status}}",
+      "refId": "A"
+    }
+  ]
+}
+```
+
+**Table panel (Topology row):**
+
+```json
+{
+  "id": 3,
+  "type": "table",
+  "title": "Instances",
+  "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+  "datasource": { "type": "prometheus", "uid": "${datasource}" },
+  "fieldConfig": {
+    "defaults": { "unit": "short", "color": { "mode": "thresholds" } },
+    "overrides": [
+      { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "custom.cellOptions", "value": { "type": "color-background" } }] }
+    ]
+  },
+  "options": { "showHeader": true },
+  "targets": [
+    {
+      "expr": "up",
+      "format": "table",
+      "instant": true,
+      "refId": "A"
+    }
+  ]
+}
+```
+
+Every panel must carry `datasource: {type: "prometheus", uid: "${datasource}"}`
+referencing the `$datasource` template variable, a unique `id`, and a
+`legendFormat` on each target.
+
 ### Mandatory panel sections
 
 Use the **RED + USE** methodology:
