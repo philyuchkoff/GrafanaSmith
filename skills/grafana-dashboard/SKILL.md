@@ -433,6 +433,33 @@ Every variable must have:
 - `multi: true` (except `$datasource`, `$interval`)
 - `refresh: 2` (refresh on dashboard load)
 
+### Annotations (deployments)
+
+If the user asked for deployment annotations, populate `annotations.list`
+with a Prometheus-range annotation that fires on deploy events. Detect
+deploys via a metric that changes on restart (exporter `_build_info`,
+`node_boot_time_seconds`, or a dedicated deploy counter); if the team
+pushes GitLab/GitHub events into Loki, reference the Loki datasource
+instead:
+
+```json
+"annotations": {
+  "list": [
+    {
+      "name": "Deployments",
+      "type": "tags",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "expr": "changes(<service>_build_info[1m]) > 0",
+      "step": "60",
+      "iconColor": "blue"
+    }
+  ]
+}
+```
+
+Only add annotations when confirmed — they add noise on dashboards that do
+not need deploy correlation.
+
 ### Alerts on the dashboard
 
 **Optional.** If the user confirms, add to each critical panel:
