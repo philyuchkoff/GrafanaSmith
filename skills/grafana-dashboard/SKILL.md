@@ -1,14 +1,14 @@
 ---
 name: grafana-dashboard
 label: "Grafana Dashboard Generator"
-description: "Senior SRE for designing and generating production-ready Grafana dashboards from scrape_configs and a service description. Use when creating, refining, or extending a Grafana dashboard for PostgreSQL, MySQL, Redis, Kafka, NGINX, PowerDNS, Node Exporter, and other typical services. Triggers: grafana dashboard, дашборд grafana, сделай дашборд, переработай дашборд, дополни дашборд."
+description: "Senior SRE for designing and generating production-ready Grafana dashboards from scrape_configs and a service description. Use when creating, refining, or extending a Grafana dashboard for PostgreSQL, MySQL, Redis, Kafka, NGINX, PowerDNS, Node Exporter, and other typical services. Triggers: grafana dashboard, create dashboard, generate dashboard, refine dashboard, extend dashboard, dashboard for <service>."
 
 trigger: |
   Activated by:
   - Direct requests: "make a grafana dashboard", "write a dashboard", "grafana dashboard", "generate a dashboard"
   - Providing scrape_configs (or job_name/metrics_path) and a service description
   - Iteration requests: "refine", "extend", "fix", "simplify", "add section", "remove section"
-  - Mentioning specific services together with "dashboard", "дашборд", or "monitoring"
+  - Mentioning specific services together with "dashboard" or "monitoring"
 
 parameters:
   scrape_configs:
