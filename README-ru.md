@@ -5,6 +5,13 @@
 GrafanaSmith — это скилл для превращения Prometheus `scrape_configs` и краткого описания сервиса
 в production-ready дашборды Grafana.
 
+Центральный элемент — скилл
+[`grafana-dashboard`](skills/grafana-dashboard/SKILL.md): opinionated-генератор, который знает
+метрики, панели и переменные, важные для самых распространённых инфраструктурных компонентов.
+Скилл написан в стандартном формате `SKILL.md` и **не привязан к конкретному движку**: он
+работает в [opencode](https://opencode.ai), Claude Code, Cursor и в любом другом агенте,
+умеющем загружать скиллы из файла `SKILL.md`.
+
 ## Зачем GrafanaSmith
 
 Большинство дашбордов Grafana в дикой природе страдают от одних и тех же
@@ -16,7 +23,7 @@ GrafanaSmith — это скилл для превращения Prometheus `scr
 - имена инстансов захардкожены вместо объявления шаблонных переменных;
 - пороги выбраны случайно, без привязки к SLO.
 
-GrafanaSmith превращает SRE best practices ()RED, USE, Golden Signals) в
+GrafanaSmith превращает SRE best practices (RED, USE, Golden Signals) в
 повторяемый workflow, чтобы каждый выкатываемый дашборд имел одинаковый формат и одинаковую планку качества.
 
 ## Скилл `grafana-dashboard`
@@ -36,7 +43,8 @@ GrafanaSmith превращает SRE best practices ()RED, USE, Golden Signals)
 
 ### Встроенные шаблоны сервисов
 
-Скилл поставляется с шаблонами для девяти сервисов:
+Скилл поставляется с девятью шаблонами в
+[`skills/grafana-dashboard/templates/`](skills/grafana-dashboard/templates/):
 
 - PostgreSQL
 - MySQL / MariaDB
@@ -48,8 +56,10 @@ GrafanaSmith превращает SRE best practices ()RED, USE, Golden Signals)
 - Kubernetes Pods (kube-state-metrics + cAdvisor)
 - Generic / неизвестный сервис (fallback на Golden Signals)
 
-Каждый шаблон задаёт секции панелей, ключевые метрики, пороги алертов
-и шаблонные переменные, осмысленные для данного сервиса.
+Каждый шаблон задаёт секции панелей, **готовые PromQL-выражения**, пороги
+алертов и шаблонные переменные, осмысленные для данного сервиса. Новый
+сервис добавляется одним файлом `templates/<service>.md` по образцу —
+менять сам скилл не нужно.
 
 ### Что генерирует скилл
 
@@ -61,35 +71,54 @@ GrafanaSmith превращает SRE best practices ()RED, USE, Golden Signals)
 - **Errors & latency distribution row** с heatmap'ами и p50/p95/p99.
 - **Topology row** (если у сервиса нетривиальная топология).
 - **Переменные шаблонов**: `$datasource`, `$job`, `$instance`, `$interval` плюс профильные (`$role`, `$datname`, `$topic`, `$consumergroup`, `$namespace`, ...).
-- **Опционально**: thresholds на критичных панелях, отдельные правила Prometheus для Alertmanager.
+- **Опционально**: thresholds на критичных панелях, отдельные правила Prometheus для Alertmanager, аннотации деплоев.
 
 Генерируемый JSON следует современным конвенциям Grafana:
-`schemaVersion: 39`, корректный `gridPos`, `__rate_interval` для
-адаптивных rate-окон, `legendFormat` на каждой серии.
+
+- `schemaVersion: 39` для Grafana 9–10, `40` для Grafana 11;
+- `gridPos` валидируется по реальным правилам сетки (`x + w <= 24`, без пересечений);
+- `$__rate_interval` во всех окнах `rate()` (фиксированные `[5m]` — только в alert-правилах);
+- `unit` задан на каждой панели (`reqps`, `s`, `percentunit`, `bytes`, ...);
+- `legendFormat` на каждой серии;
+- стабильная конвенция `uid` (`<environment>-<service>-<purpose>`).
+
+В скилл встроены эталонные панели (stat, timeseries, table), чтобы каждая
+сгенерированная панель следовала одному и тому же контракту полей, а
+после выдачи JSON скилл просит импортировать дашборд и сообщить об
+ошибках — для второй итерации.
 
 ## Установка
 
-Скилл — это один файл `SKILL.md` плюс метаданные, подхватывается автоматически из стандартных директорий скиллов.
+Скилл — это файл `SKILL.md` плюс директория `templates/`. Любой агент,
+умеющий загружать скиллы (opencode, Claude Code, Cursor, ...),
+подхватит его из соответствующей директории.
 
-### Локальный клон
+### opencode
 
 ```bash
 git clone https://github.com/philyuchkoff/GrafanaSmith.git
-```
-
-Создайте симлинк в глобальную директорию скиллов opencode (или что там у вас):
-
-```bash
 ln -s "$(pwd)/GrafanaSmith/skills/grafana-dashboard" \
       ~/.config/opencode/skills/grafana-dashboard
 ```
 
 Перезапустите opencode, чтобы новый скилл загрузился.
 
+### Claude Code / Cursor
+
+```bash
+git clone https://github.com/philyuchkoff/GrafanaSmith.git
+mkdir -p ~/.claude/skills
+cp -R GrafanaSmith/skills/grafana-dashboard ~/.claude/skills/
+```
+
+(Claude Code загружает `~/.claude/skills/<name>/SKILL.md`; Cursor читает
+`.cursor/skills/` в проекте или в пользовательской директории.)
+
 ### Установка только для проекта
 
-Чтобы использовать скилл только внутри этого репозитория, скопируйте его
-в `.opencode/skills/`:
+Чтобы использовать скилл только внутри одного репозитория, скопируйте
+его в проектную директорию скиллов (например, `.opencode/skills/` для
+opencode):
 
 ```bash
 mkdir -p .opencode/skills
@@ -107,10 +136,12 @@ cp -R skills/grafana-dashboard .opencode/skills/
 
 1. Распарсит scrape config и определит доступные метрики, структуру
    лейблов и роли инстансов.
-2. Сопоставит описание со встроенными шаблонами.
+2. Загрузит подходящий шаблон из `templates/` и сопоставит его с
+   описанием сервиса.
 3. Задаст не более 3-4 уточняющих вопросов (топология, SLI, алертинг,
    временная агрегация), если что-то неоднозначно.
-4. Выдаст полный JSON дашборда плюс краткое описание структуры панелей.
+4. Выдаст полный JSON дашборда плюс краткое описание структуры панелей,
+   после чего попросит импортировать его и сообщить об ошибках.
 
 Для доработки существующего дашборда:
 
@@ -127,7 +158,17 @@ GrafanaSmith/
 ├── README-ru.md                       # ru
 └── skills/
     └── grafana-dashboard/
-        └── SKILL.md                   # собственно скилл
+        ├── SKILL.md                   # собственно скилл
+        └── templates/                 # шаблоны сервисов (PromQL, алерты, переменные)
+            ├── postgresql.md
+            ├── mysql.md
+            ├── redis.md
+            ├── kafka.md
+            ├── nginx.md
+            ├── powerdns.md
+            ├── node-exporter.md
+            ├── kubernetes-pods.md
+            └── generic.md
 ```
 
 ## Конвенции
@@ -137,7 +178,9 @@ GrafanaSmith/
 1. **Берите метрики, которые реально эмитит экспортер.** Сверяйтесь с
    документацией экспортера, не выдумывайте имена метрик.
 2. **Используйте `$__rate_interval` в окнах `rate()`** — дашборд будет
-   корректно работать при любом уровне зума.
+   корректно работать при любом уровне зума. Фиксированные окна (`[5m]`)
+   допустимы только в Prometheus alert-правилах, где `$__rate_interval`
+   не существует.
 3. **Всегда задавайте `legendFormat`** с интерполяцией хотя бы одного лейбла.
 4. **Пороги должны быть привязаны к SLO или к сигналу из реальных
    инцидентов.** Случайные пороги — это шум.
@@ -145,19 +188,29 @@ GrafanaSmith/
    оставался навигируемым.
 6. **Переменные — snake_case и регистрозависимые.** `$replica_type`, а не
    `$ReplicaType`.
+7. **Задавайте `unit` на каждой панели** и следуйте конвенции `uid`
+   `<environment>-<service>-<purpose>`.
 
 ## Участие в проекте
 
 Pull request'ы приветствуются. Самые полезные дополнения:
 
 - Новые шаблоны сервисов (Cassandra, MongoDB, RabbitMQ, Elasticsearch,
-  ClickHouse, Envoy, HAProxy, ...).
+  ClickHouse, Envoy, HAProxy, ...) — файлом `templates/<service>.md`.
 - Лучшие дефолты для порогов на основе реальных SLO.
 - Дополнительные паттерны PromQL для трудноизвлекаемых сигналов.
+- Переводы документации.
 
 Открывайте PR с новым шаблоном в
-`skills/grafana-dashboard/templates/<service>/`.
+`skills/grafana-dashboard/templates/<service>.md`.
+
+## Дорожная карта
+
+- [ ] Шаблонные drill-down дашборды (cluster → node → query).
+- [ ] Автогенерация файлов Prometheus alert-правил вместе с дашбордом.
+- [ ] Манифесты provisioning (Grafana provisioning, Terraform).
+- [ ] Линтер, валидирующий JSON дашборда по конвенциям.
 
 ## Лицензия
 
-MIT. См. файл `LICENSE` (будет добавлен).
+MIT. См. файл [`LICENSE`](LICENSE).
