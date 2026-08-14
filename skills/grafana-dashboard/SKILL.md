@@ -535,7 +535,8 @@ groups:
 
 ## Validation (before emitting JSON)
 
-1. **JSON syntax** — verify via `jq . dashboard.json`.
+1. **JSON syntax** — verify via `jq . dashboard.json` (or
+   `python3 -m json.tool dashboard.json` if `jq` is not installed).
 2. **All metrics exist** — if Prometheus is reachable, run
    `curl http://prometheus/api/v1/label/__name__/values | jq` and cross-check.
    If not reachable — say so honestly and ask the user to verify via
