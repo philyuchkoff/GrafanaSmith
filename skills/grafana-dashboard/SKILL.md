@@ -242,6 +242,12 @@ The root object is an exported Grafana dashboard:
 }
 ```
 
+`schemaVersion` depends on the Grafana version the dashboard targets; if
+the target is unknown, ask in the clarifying round:
+`39` for Grafana 9–10, `40` for Grafana 11. Lower version numbers import
+fine into newer Grafana; a too-high number fails on older instances. Do
+not set `"version"` above `1` — Grafana bumps it on the first save.
+
 ### Reference panels
 
 Use these as **structural templates** — every generated panel must follow
@@ -497,8 +503,8 @@ groups:
    `y` is any non-negative integer. Two panels must never share the same
    area. Collapsed rows use `gridPos: {h: 1, w: 24}` and push the
    following panels below them.
-5. **`schemaVersion` matches the Grafana version** — see the dashboard
-   generation section.
+5. **`schemaVersion` matches the Grafana version** — `39` for Grafana 9–10,
+   `40` for Grafana 11.
 
 After emitting the JSON, **close the loop**: ask the user to import the
 dashboard into Grafana and paste any import errors or "metric not found"
