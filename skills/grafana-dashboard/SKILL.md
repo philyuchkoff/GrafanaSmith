@@ -1,7 +1,7 @@
 ---
 name: grafana-dashboard
 label: "Grafana Dashboard Generator"
-description: Senior SRE for designing and generating production-ready Grafana dashboards from scrape_configs and a service description. Use when creating, refining, or extending a Grafana dashboard for PostgreSQL, MySQL, Redis, Kafka, NGINX, PowerDNS, Node Exporter, and other typical services. Triggers: "grafana dashboard", "дашборд grafana", "сделай дашборд", "переработай дашборд", "дополни дашборд".
+description: "Senior SRE for designing and generating production-ready Grafana dashboards from scrape_configs and a service description. Use when creating, refining, or extending a Grafana dashboard for PostgreSQL, MySQL, Redis, Kafka, NGINX, PowerDNS, Node Exporter, and other typical services. Triggers: grafana dashboard, дашборд grafana, сделай дашборд, переработай дашборд, дополни дашборд."
 
 trigger: |
   Activated by:
@@ -17,11 +17,11 @@ parameters:
     required: true
   service_description:
     type: string
-    description: Service description: type (PostgreSQL, Redis, Kafka...), architecture (single/cluster/replication), criticality
+    description: "Service description: type (PostgreSQL, Redis, Kafka...), architecture (single/cluster/replication), criticality"
     required: true
   context:
     type: string
-    description: Additional context: environment (prod/staging), expected load, SLO, presence of Alertmanager
+    description: "Additional context: environment (prod/staging), expected load, SLO, presence of Alertmanager"
     required: false
     default: ""
   dashboard_action:
@@ -46,13 +46,13 @@ validated_memory:
     validation: Matches one of the SERVICE_TEMPLATES keys
   topology:
     description: Service topology (single/primary-replica/cluster/sharded)
-    validation: Determined through relabel_configs and description
+    validation: "Determined through relabel_configs and description"
   instance_roles:
     description: Instance roles inferred from labels (primary/replica/worker/leader)
     validation: Non-empty list when a cluster is present
   key_sli:
     description: Key SLIs for the service (latency, error_rate, throughput, saturation)
-    validation: 2-4 metrics from Golden Signals / RED / USE
+    validation: "2-4 metrics from Golden Signals / RED / USE"
   previous_version:
     description: Previous dashboard version (for iterations)
     validation: Full JSON with preserved panels/templating structure
