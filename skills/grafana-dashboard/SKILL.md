@@ -497,7 +497,13 @@ groups:
    `y` is any non-negative integer. Two panels must never share the same
    area. Collapsed rows use `gridPos: {h: 1, w: 24}` and push the
    following panels below them.
-5. **`schemaVersion` matches Grafana ≥ 9.x** (use 39 for modern versions).
+5. **`schemaVersion` matches the Grafana version** — see the dashboard
+   generation section.
+
+After emitting the JSON, **close the loop**: ask the user to import the
+dashboard into Grafana and paste any import errors or "metric not found"
+warnings. Iterate on that feedback (fix queries, adjust units or
+thresholds) rather than taking the first JSON as final.
 
 ---
 
