@@ -393,6 +393,27 @@ Every panel must carry `datasource: {type: "prometheus", uid: "${datasource}"}`
 referencing the `$datasource` template variable, a unique `id`, and a
 `legendFormat` on each target.
 
+### Units (`fieldConfig.defaults.unit`)
+
+Always set a unit so numbers are human-readable instead of raw values:
+
+| Metric | `unit` |
+|--------|--------|
+| Request throughput | `reqps` |
+| Latency (seconds) | `s` |
+| Error rate / ratio | `percentunit` (0–1) or `percent` (0–100) |
+| Memory / disk / network bytes | `bytes` |
+| Data rate | `Bps`, `BdiskIops`, `bps` |
+| Counts / gauges | `short` or `none` |
+| CPU usage | `percent` |
+| Temperature | `celsius` |
+| Time durations | `s`, `ms`, `ns` |
+
+For ratio metrics driven by the same underlying counter (e.g. error rate
+= errors / total), prefer `unit: percentunit` and keep the query returning
+values in the 0–1 range; use `percent` when the query already multiples by
+100.
+
 ### Mandatory panel sections
 
 Use the **RED + USE** methodology:
