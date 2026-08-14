@@ -285,9 +285,9 @@ Use the **RED + USE** methodology:
 
 Stat panels with Golden Signals:
 
-- **QPS / Throughput** — `sum(rate(<metric>_total[5m]))`
-- **Latency p99** — `histogram_quantile(0.99, sum by (le) (rate(<metric>_seconds_bucket[5m])))`
-- **Error Rate** — `sum(rate(<metric>_total{status=~"5..|error"}[5m])) / sum(rate(<metric>_total[5m]))`
+- **QPS / Throughput** — `sum(rate(<metric>_total[$__rate_interval]))`
+- **Latency p99** — `histogram_quantile(0.99, sum by (le) (rate(<metric>_seconds_bucket[$__rate_interval])))`
+- **Error Rate** — `sum(rate(<metric>_total{status=~"5..|error"}[$__rate_interval])) / sum(rate(<metric>_total[$__rate_interval]))`
 - **Saturation** — profile-specific to the service (connections, lag, queue depth, disk usage)
 
 #### 2. Traffic / Queries (timeseries)
@@ -358,7 +358,9 @@ Every variable must have:
 ```
 
 For Alertmanager integration, generate Prometheus rules in a **separate
-file**:
+file**. Note: `$__rate_interval` is a Grafana template variable and does
+**not** work inside Prometheus rules — use a fixed window (e.g. `[5m]`)
+there:
 
 ```yaml
 groups:
@@ -384,7 +386,7 @@ groups:
 - **`sum by (...)` for aggregation** over the labels you actually need, not
   all of them.
 - **`topk(10, ...)`** for top-N tables.
-- **`histogram_quantile(0.99, sum by (le) (rate(..._bucket[5m])))`** — the
+- **`histogram_quantile(0.99, sum by (le) (rate(..._bucket[$__rate_interval])))`** — the
   standard pattern for p99.
 - **`legendFormat`** — required for every metric, format:
   `{{label1}} - {{label2}}`.
