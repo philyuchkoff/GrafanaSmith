@@ -268,9 +268,12 @@ create `templates/<service>.md` following the same layout.
      throughput / saturation)"
    - "Which operations are critical? (read / write / admin / replication)"
 
-3. **Alerting & UX**
-   - "Do you need built-in thresholds and alerts on the dashboard?"
-   - "Which time aggregations should be the default? (1m / 5m / 1h / 24h)"
+3. **Alerting & runbook**
+    - "Do you need dashboard thresholds + Prometheus alert rules?"
+    - "If yes — what severity levels? (default: warning + critical)"
+    - "If yes — do you have a Confluence runbook page I can link in
+      `annotations.runbook_url`?"
+    - "Which time aggregations should be the default? (1m / 5m / 1h / 24h)"
 
 4. **Advanced** (on demand)
    - "Do you need time drill-down (from a daily chart to a 5-minute one)?"
@@ -555,7 +558,10 @@ not need deploy correlation.
 
 ### Alerts on the dashboard
 
-**Optional.** If the user confirms, add to each critical panel:
+**Optional.** If the user confirms, add threshold visual markers to each
+critical panel. These are **dashboard-level thresholds** only (color
+changes on the graph/stat) — they do not trigger actual alert
+notifications.
 
 ```json
 "thresholds": {
@@ -568,23 +574,72 @@ not need deploy correlation.
 }
 ```
 
-For Alertmanager integration, generate Prometheus rules in a **separate
-file**. Note: `$__rate_interval` is a Grafana template variable and does
-**not** work inside Prometheus rules — use a fixed window (e.g. `[5m]`)
-there:
+### Prometheus alert rules (separate output)
+
+**If the user mentions Alertmanager or asks for alert rules**, generate
+them in a **separate file** (not inside the dashboard JSON), formatted
+as a standard PrometheusRule CR or `prometheus_rules.yml` file.
+
+**Dialog flow for alerts:**
+1. If the user mentions Alertmanager: "I'll generate PrometheusRules as a
+   separate YAML file alongside the dashboard. Two questions:"
+   - "What severity levels should I use? (default: warning + critical)"
+   - "Do you have a Confluence runbook page I can link in
+     `annotations.runbook_url`?"
+
+2. If the user provides a **Confluence runbook URL**, inject it into every
+   alert's `annotations.runbook_url`:
+   ```yaml
+   annotations:
+     runbook_url: "https://confluence.example.com/display/.../<page-id>"
+   ```
+
+3. If the user says **only Alertmanager but no runbook yet**, ask if they
+   want a Confluence page created and a link added later.
+
+4. If the user says **no alerts at all**, skip this section.
+
+**Output format for alert rules:**
+
+The skill emits a second code block containing the PrometheusRule YAML.
+All template-specific alerts come from the template's `## Alerts` section.
 
 ```yaml
-groups:
-  - name: <service>-alerts
-    rules:
-      - alert: <Service>HighErrorRate
-        expr: sum(rate(...[5m])) > 0.05
-        for: 5m
-        labels: { severity: warning, service: <service> }
-        annotations:
-          summary: "..."
-          description: "..."
+# prometheus-rules.yaml — <Service> alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: <service>-alerts
+  namespace: monitoring
+  labels:
+    app: grafana-smith
+    tier: alerting
+spec:
+  groups:
+    - name: <service>
+      rules:
+        - alert: <Service>HighErrorRate
+          expr: sum(rate(<metric>_total{status=~"5..|error"}[5m])) / sum(rate(<metric>_total[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            service: "<service>"
+          annotations:
+            summary: "<Service> error rate above 5%"
+            description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+            runbook_url: "<provided-by-user>"
 ```
+
+`$__rate_interval` is a Grafana template variable and does **not** work
+inside Prometheus rules — use a fixed window (e.g. `[5m]`).
+
+**Conventions for alert rules:**
+- `alert` name: `<Service><Description>` PascalCase (e.g. `PostgreSQLConnectionSaturation`)
+- `severity`: `critical` (needs immediate paging) or `warning` (needs attention within hours)
+- `for`: `1m` for critical, `5m` for warning, `15m` for trends
+- `annotations.summary`: one-line summary with the service and metric
+- `annotations.description`: includes `{{ $value }}` for context
+- `annotations.runbook_url`: set once per service (same for all rules in that group)
 
 ---
 
@@ -781,21 +836,25 @@ thresholds) rather than taking the first JSON as final.
 ### When creating
 
 First, a short text description of the structure, then JSON in a code
-block:
+block. If alert rules were generated, include them in a separate code block
+after the JSON.
 
 ```markdown
 ## Dashboard structure
+...
 
-- **Variables:** datasource, job, instance, interval, role
-- **Row 1 — Overview:** QPS, Latency p99, Error Rate, Active Connections
-- **Row 2 — Traffic:** HTTP Requests by Status, Top Endpoints
-- **Row 3 — Replication:** Replica Lag, WAL Position
-- **Row 4 — Resources:** CPU, Memory, Disk (Node Exporter)
-
-## JSON
+## Dashboard JSON
 
 ```json
 { ... }
+```
+
+## Prometheus alert rules (optional)
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+...
 ```
 ```
 
