@@ -114,13 +114,19 @@ context: "production, ~5000 QPS, SLO 99.95%, Alertmanager in place"
 Extract from the configuration:
 
 1. **Available metrics** — determined by `metrics_path` and known exporters:
-   - `postgres_exporter` → `pg_*`
-   - `redis_exporter` → `redis_*`
-   - `kafka_exporter` → `kafka_*`
-   - `node_exporter` → `node_*`
-   - `nginx-prometheus-exporter` → `nginx_*`
-   - `mysqld_exporter` → `mysql_*`
-   - `powerdns-exporter` → `pdns_*`
+    - `postgres_exporter` → `pg_*`
+    - `redis_exporter` → `redis_*`
+    - `kafka_exporter` → `kafka_*`
+    - `node_exporter` → `node_*`
+    - `nginx-prometheus-exporter` → `nginx_*`
+    - `mysqld_exporter` → `mysql_*`
+    - `powerdns-exporter` → `pdns_*`
+    - **Consult `compatibility-matrix.md`** for known metric renames per exporter
+      version (e.g. `tup_` → `tuples_` for postgres_exporter).
+    - **Detect version** — if the user provides `up{job=...}` output or
+      `curl /api/v1/label/__name__/values`, match metric naming against the
+      compatibility matrix. If unable to detect, default to the latest known
+      naming and warn the user.
 2. **Label structure** — `instance`, `job`, and custom ones via
    `relabel_configs` (`role`, `env`, `cluster`, `shard`, `datname`, etc.).
 3. **Instance patterns** — primary/replica/worker/leader — extracted from
@@ -167,9 +173,11 @@ Each template defines: panel **Sections**, **Key metrics & PromQL**
 (ready-to-use expressions), **Alerts** (Prometheus rules), and
 **Variables**. Always verify metric names against the exporter version
 and the actual `scrape_configs` before emitting JSON — exporter metric
-families vary (e.g. postgres_exporter, JMX vs kafka_exporter). To add a
-template for a new service, create `templates/<service>.md` following the
-same layout.
+families vary (e.g. postgres_exporter, JMX vs kafka_exporter). **Also
+consult `compatibility-matrix.md`** for known metric renames across
+exporter versions — for example, `tup_` → `tuples_` between
+postgres_exporter 0.4 and 0.12. To add a template for a new service,
+create `templates/<service>.md` following the same layout.
 
 ---
 
