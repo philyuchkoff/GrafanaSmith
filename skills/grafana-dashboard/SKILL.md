@@ -550,6 +550,18 @@ groups:
 
 ## Validation (before emitting JSON)
 
+There is a companion validation script at `tests/validate_dashboard.py`.
+**After generating JSON**, run it on the output file to check structural
+validity before presenting to the user:
+
+```bash
+python3 tests/validate_dashboard.py ./output.json
+```
+
+If the script reports errors, fix them before presenting to the user.
+
+### Manual checks
+
 1. **JSON syntax** — verify via `jq . dashboard.json` (or
    `python3 -m json.tool dashboard.json` if `jq` is not installed).
    If `existing_dashboard` is provided in iteration mode, parse it
