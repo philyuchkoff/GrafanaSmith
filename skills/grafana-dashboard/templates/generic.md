@@ -1,6 +1,6 @@
 # Generic / unknown service template
 
-Load this template when the service type does not match a known exporter, or
+Version: 0.2.0. Load this template when the service type does not match a known exporter, or
 the type is ambiguous and cannot be determined from `scrape_configs`.
 
 ## Sections

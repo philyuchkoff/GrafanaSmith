@@ -1,6 +1,6 @@
 # NGINX template
 
-Load this template when the service type is **NGINX** (nginx-prometheus-exporter / stub_status).
+Version: 0.2.0. Load this template when the service type is **NGINX** (nginx-prometheus-exporter / stub_status).
 
 ## Sections
 

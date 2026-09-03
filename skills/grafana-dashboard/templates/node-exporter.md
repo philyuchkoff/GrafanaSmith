@@ -1,6 +1,6 @@
 # Node Exporter template (generic host)
 
-Load this template when the service type is any **Linux host** (node_exporter).
+Version: 0.2.0. Load this template when the service type is any **Linux host** (node_exporter).
 
 ## Sections
 

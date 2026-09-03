@@ -1,6 +1,6 @@
 # Kubernetes Pods template (kube-state-metrics + cAdvisor)
 
-Load this template when the service type is **Kubernetes pods / containers**
+Version: 0.2.0. Load this template when the service type is **Kubernetes pods / containers**
 (kube-state-metrics + cAdvisor node exporter).
 
 ## Sections

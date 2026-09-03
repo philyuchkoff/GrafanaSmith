@@ -1,6 +1,6 @@
 # Redis template
 
-Load this template when the service type is **Redis / Redis Cluster** (redis_exporter).
+Version: 0.2.0. Load this template when the service type is **Redis / Redis Cluster** (redis_exporter).
 
 ## Sections
 

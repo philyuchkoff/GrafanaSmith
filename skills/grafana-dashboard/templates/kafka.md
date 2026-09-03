@@ -1,6 +1,6 @@
 # Kafka template
 
-Load this template when the service type is **Kafka** (JMX / kafka_exporter).
+Version: 0.2.0. Load this template when the service type is **Kafka** (JMX / kafka_exporter).
 
 ## Sections
 

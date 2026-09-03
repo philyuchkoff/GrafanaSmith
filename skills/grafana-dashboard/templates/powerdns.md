@@ -1,6 +1,6 @@
 # PowerDNS Authoritative template
 
-Load this template when the service type is **PowerDNS Authoritative** (powerdns-exporter).
+Version: 0.2.0. Load this template when the service type is **PowerDNS Authoritative** (powerdns-exporter).
 
 ## Sections
 
