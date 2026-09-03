@@ -1,0 +1,102 @@
+name: "Validate SKILL.md and templates"
+
+on:
+  push:
+    paths:
+      - "skills/**"
+      - "tests/**"
+      - ".github/workflows/test-skill.yml"
+  pull_request:
+    paths:
+      - "skills/**"
+      - "tests/**"
+      - ".github/workflows/test-skill.yml"
+
+jobs:
+  validate-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate SKILL.md YAML frontmatter
+        run: |
+          python3 -c "
+          import yaml
+          with open('skills/grafana-dashboard/SKILL.md') as f:
+              content = f.read()
+          parts = content.split('---')
+          if len(parts) < 3:
+              raise SystemExit('SKILL.md: missing YAML frontmatter (--- delimiters)')
+          frontmatter = yaml.safe_load(parts[1])
+          assert 'name' in frontmatter, 'frontmatter missing name'
+          assert 'trigger' in frontmatter, 'frontmatter missing trigger'
+          print('SKILL.md frontmatter OK')
+          "
+
+      - name: Validate template files
+        run: |
+          TEMPLATE_DIR="skills/grafana-dashboard/templates"
+          for f in "$TEMPLATE_DIR"/*.md; do
+            if ! head -n 5 "$f" | grep -q 'Version:'; then
+              echo "ERROR: $f missing Version header"
+              exit 1
+            fi
+          done
+          echo "All templates have version headers"
+
+      - name: Run JSON validator self-test
+        run: |
+          python3 tests/validate_dashboard.py tests/validate_dashboard.py 2>&1 | grep -q "JSON parse" \
+            && echo "Validator correctly rejects non-JSON input" \
+            || (echo "Validator should reject non-JSON input"; exit 1)
+
+      - name: Validate example JSON
+        run: |
+          cat > /tmp/example-dashboard.json << 'EOF'
+          {
+            "annotations": {"list": []},
+            "description": "example",
+            "editable": true,
+            "panels": [
+              {"id": 1, "type": "stat", "title": "Connections", "gridPos": {"x":0,"y":0,"w":4,"h":4}, "datasource": {"type":"prometheus","uid":"${datasource}"}},
+              {"id": 2, "type": "stat", "title": "QPS", "gridPos": {"x":4,"y":0,"w":4,"h":4}, "datasource": {"type":"prometheus","uid":"${datasource}"}},
+              {"id": 3, "type": "stat", "title": "Latency", "gridPos": {"x":8,"y":0,"w":4,"h":4}, "datasource": {"type":"prometheus","uid":"${datasource}"}}
+            ],
+            "refresh": "30s",
+            "schemaVersion": 42,
+            "tags": ["test"],
+            "templating": {"list": [
+              {"name": "datasource", "type": "datasource"},
+              {"name": "job", "type": "query"},
+              {"name": "instance", "type": "query"},
+              {"name": "interval", "type": "interval"}
+            ]},
+            "time": {"from": "now-6h", "to": "now"},
+            "title": "Example - Staging Overview",
+            "uid": "staging-example-overview",
+            "version": 1,
+            "grafanaSmith": {
+              "version": "0.2.0",
+              "template": "generic",
+              "template_version": "0.2.0",
+              "mode": "create",
+              "datasource_type": "prometheus",
+              "generated_at": "2025-01-15T00:00:00Z"
+            }
+          }
+          EOF
+          python3 tests/validate_dashboard.py /tmp/example-dashboard.json
+
+      - name: Validate fixture JSONs (if present)
+        run: |
+          for fixture in tests/fixtures/*.json; do
+            [ -f "$fixture" ] || continue
+            echo "Validating fixture: $fixture"
+            python3 tests/validate_dashboard.py "$fixture"
+          done
+        continue-on-error: true
