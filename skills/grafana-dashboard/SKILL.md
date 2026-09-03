@@ -160,10 +160,15 @@ actually in use.
 | Service | Template file |
 |---------|---------------|
 | PostgreSQL | `templates/postgresql.md` |
+| PostgreSQL HA (Patroni) | `templates/postgresql-patroni.md` |
 | MySQL / MariaDB | `templates/mysql.md` |
 | Redis | `templates/redis.md` |
+| Redis Cluster | `templates/redis-cluster.md` |
 | Kafka | `templates/kafka.md` |
 | NGINX | `templates/nginx.md` |
+| Elasticsearch / OpenSearch | `templates/elasticsearch.md` |
+| MongoDB | `templates/mongodb.md` |
+| RabbitMQ | `templates/rabbitmq.md` |
 | PowerDNS Authoritative | `templates/powerdns.md` |
 | Node Exporter (linux host) | `templates/node-exporter.md` |
 | Kubernetes Pods | `templates/kubernetes-pods.md` |
