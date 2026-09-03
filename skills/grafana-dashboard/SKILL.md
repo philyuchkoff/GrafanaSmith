@@ -552,6 +552,9 @@ groups:
 
 1. **JSON syntax** — verify via `jq . dashboard.json` (or
    `python3 -m json.tool dashboard.json` if `jq` is not installed).
+   If `existing_dashboard` is provided in iteration mode, parse it
+   structurally first — any parse error must be reported to the user before
+   proceeding.
 2. **All metrics exist** — if Prometheus is reachable, run
    `curl http://prometheus/api/v1/label/__name__/values | jq` and cross-check.
    If not reachable — say so honestly and ask the user to verify via
@@ -582,12 +585,22 @@ thresholds) rather than taking the first JSON as final.
 1. **Preserve context** — do not regenerate the dashboard from scratch;
    work only with the requested part.
 2. **Preserve all unchanged sections as is** (including panel IDs if set).
-3. **When adding a section** — compute `gridPos` so it slots in at the end
+3. **Parse structurally** — when given `existing_dashboard` JSON, parse it
+   into a native object (e.g. via `python3 -c "import json; ..."` or
+   equivalent). Make changes by mutating the object tree: add/remove panels
+   from `panels[]`, update `gridPos`, add/remove items in
+   `templating.list`, change `thresholds` or `title` strings. Then
+   serialize back to JSON. Never apply textual string replacements to raw
+   JSON — that breaks with escaping, reordering, and whitespace drift.
+4. **When adding a section** — compute `gridPos` so it slots in at the end
    (or where the user asked).
-4. **When removing a section** — shift lower panels up to avoid empty space
+5. **When removing a section** — shift lower panels up to avoid empty space
    (unless the user wants to keep the gap).
-5. **Show a diff** — what changed, which panels/variables are new, which
+6. **Show a diff** — what changed, which panels/variables are new, which
    were removed.
+7. **Cache the parsed structure** — run the structural parse once and hold
+   the object in memory for all subsequent modifications within the same
+   iteration session.
 
 ### Iteration commands
 
