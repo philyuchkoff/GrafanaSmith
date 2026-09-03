@@ -39,21 +39,27 @@ dashboard:
 | `service_description` | yes | What the service is and how it is deployed (single, cluster, primary-replica, sharded...) |
 | `context` | no | Environment, expected load, SLO, presence of Alertmanager |
 
-The skill operates in two modes:
+The skill operates in three modes:
 
 - **create** — generate a new dashboard from scratch.
 - **iterate** — refine an existing dashboard without rewriting it from scratch.
+- **composite** — generate a single dashboard covering multiple services (e.g. PG+Redis+Kafka).
 
 ### Built-in service templates
 
-The skill ships with nine service templates under
+The skill ships with fourteen service templates under
 [`skills/grafana-dashboard/templates/`](skills/grafana-dashboard/templates/):
 
 - PostgreSQL
+- PostgreSQL HA (Patroni)
 - MySQL / MariaDB
 - Redis
+- Redis Cluster
 - Kafka
 - NGINX
+- Elasticsearch / OpenSearch
+- MongoDB
+- RabbitMQ
 - PowerDNS Authoritative
 - Node Exporter (generic host)
 - Kubernetes Pods (kube-state-metrics + cAdvisor)
@@ -84,7 +90,12 @@ The generated JSON follows modern Grafana conventions:
 - `$__rate_interval` in all `rate()` windows (fixed `[5m]` only in alert rules);
 - `unit` set on every panel (`reqps`, `s`, `percentunit`, `bytes`, ...);
 - `legendFormat` on every series;
-- stable `uid` convention (`<environment>-<service>-<purpose>`).
+- stable `uid` convention (`<environment>-<service>-<purpose>`);
+- `grafanaSmith` metadata block with version, template, template_version,
+  mode, datasource_type, and generated_at — so the skill knows what version
+  generated the dashboard when iterating later;
+- alert rules (PrometheusRule YAML) with severity labels and
+  `annotations.runbook_url` links when the user provides a Confluence page.
 
 The skill also embeds canonical reference panels (stat, timeseries, table)
 so every generated panel follows the same field contract, and closes the
@@ -158,17 +169,29 @@ change, showing a diff at the end.
 
 ```
 GrafanaSmith/
+├── CHANGELOG.md
 ├── README.md                          # this file
 ├── README-ru.md                       # Russian version
+├── LICENSE                            # MIT
+├── .github/workflows/                 # CI: validates SKILL.md frontmatter, templates, and JSON
+├── tests/
+│   ├── fixtures/                      # Test inputs for regression checks
+│   └── validate_dashboard.py          # Dashboard JSON validator
 └── skills/
     └── grafana-dashboard/
         ├── SKILL.md                   # the skill itself
-        └── templates/                 # per-service templates (PromQL, alerts, variables)
+        ├── compatibility-matrix.md    # metric renames across exporter versions
+        └── templates/                 # per-service templates (14 services)
             ├── postgresql.md
+            ├── postgresql-patroni.md
             ├── mysql.md
             ├── redis.md
+            ├── redis-cluster.md
             ├── kafka.md
             ├── nginx.md
+            ├── elasticsearch.md
+            ├── mongodb.md
+            ├── rabbitmq.md
             ├── powerdns.md
             ├── node-exporter.md
             ├── kubernetes-pods.md
@@ -198,8 +221,7 @@ When you add a new service template, follow these rules:
 
 Contributions are welcome. The most useful additions are:
 
-- New service templates (Cassandra, MongoDB, RabbitMQ, Elasticsearch,
-  ClickHouse, Envoy, HAProxy, ...) — create `templates/<service>.md`.
+- New service templates (Cassandra, ClickHouse, Envoy, HAProxy, ...) — create `templates/<service>.md`.
 - Better defaults for thresholds based on real-world SLOs.
 - Additional PromQL patterns for hard-to-expose signals.
 - Translations of the documentation.
@@ -209,8 +231,13 @@ Open a pull request with the new template under
 
 ## Roadmap
 
+- [x] Auto-export of Prometheus alert rule files → done in 0.2.0
+- [x] CI/CD for skill validation → done in 0.2.0
+- [x] More templates (Elasticsearch, MongoDB, RabbitMQ, Patroni, Redis Cluster) → done in 0.2.0
 - [ ] Templated drill-down dashboards (cluster -> node -> query).
-- [ ] Auto-export of Prometheus alert rule files alongside the dashboard.
+- [ ] A hosted catalog of community-contributed service templates.
+- [ ] Graph-based auto-detection of service type from RN
+   Prometheus metric names alone (no service_description needed).
 - [ ] Provisioning manifests (Grafana provisioning, Terraform).
 - [ ] Linter that validates a Grafana JSON against the conventions.
 

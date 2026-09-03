@@ -36,21 +36,27 @@ GrafanaSmith превращает SRE best practices (RED, USE, Golden Signals) 
 | `service_description` | да | Что за сервис и как развёрнут (single, cluster, primary-replica, sharded...) |
 | `context` | нет | Окружение, ожидаемая нагрузка, SLO, наличие Alertmanager |
 
-Скилл работает в двух режимах:
+Скилл работает в трёх режимах:
 
 - **create** — сгенерировать новый дашборд с нуля.
 - **iterate** — доработать существующий дашборд, не переписывая его.
+- **composite** — сгенерировать один дашборд на несколько сервисов одного стека (например, PG+Redis+Kafka+NGINX).
 
 ### Встроенные шаблоны сервисов
 
-Скилл поставляется с девятью шаблонами в
+Скилл поставляется с четырнадцатью шаблонами в
 [`skills/grafana-dashboard/templates/`](skills/grafana-dashboard/templates/):
 
 - PostgreSQL
+- PostgreSQL HA (Patroni)
 - MySQL / MariaDB
 - Redis
+- Redis Cluster
 - Kafka
 - NGINX
+- Elasticsearch / OpenSearch
+- MongoDB
+- RabbitMQ
 - PowerDNS Authoritative
 - Node Exporter
 - Kubernetes Pods (kube-state-metrics + cAdvisor)
@@ -80,7 +86,10 @@ GrafanaSmith превращает SRE best practices (RED, USE, Golden Signals) 
 - `$__rate_interval` во всех окнах `rate()` (фиксированные `[5m]` — только в alert-правилах);
 - `unit` задан на каждой панели (`reqps`, `s`, `percentunit`, `bytes`, ...);
 - `legendFormat` на каждой серии;
-- стабильная конвенция `uid` (`<environment>-<service>-<purpose>`).
+- стабильная конвенция `uid` (`<environment>-<service>-<purpose>`);
+- блок метаданных `grafanaSmith` с версией, шаблоном, временем генерации;
+- alert rules (PrometheusRule YAML) с severity labels и
+  `annotations.runbook_url` при наличии Confluence.
 
 В скилл встроены эталонные панели (stat, timeseries, table), чтобы каждая
 сгенерированная панель следовала одному и тому же контракту полей, а
@@ -154,17 +163,29 @@ cp -R skills/grafana-dashboard .opencode/skills/
 
 ```
 GrafanaSmith/
+├── CHANGELOG.md
 ├── README.md                          # en
 ├── README-ru.md                       # ru
+├── LICENSE                            # MIT
+├── .github/workflows/                # CI: проверка SKILL.md, шаблонов и JSON
+├── tests/
+│   ├── fixtures/                     # входные данные для регрессионных проверок
+│   └── validate_dashboard.py         # валидатор дашбордов по структуре
 └── skills/
     └── grafana-dashboard/
         ├── SKILL.md                   # собственно скилл
-        └── templates/                 # шаблоны сервисов (PromQL, алерты, переменные)
+        ├── compatibility-matrix.md    # различия метрик между версиями экспортеров
+        └── templates/                 # шаблоны сервисов (14 штук)
             ├── postgresql.md
+            ├── postgresql-patroni.md
             ├── mysql.md
             ├── redis.md
+            ├── redis-cluster.md
             ├── kafka.md
             ├── nginx.md
+            ├── elasticsearch.md
+            ├── mongodb.md
+            ├── rabbitmq.md
             ├── powerdns.md
             ├── node-exporter.md
             ├── kubernetes-pods.md
@@ -195,8 +216,7 @@ GrafanaSmith/
 
 Pull request'ы приветствуются. Самые полезные дополнения:
 
-- Новые шаблоны сервисов (Cassandra, MongoDB, RabbitMQ, Elasticsearch,
-  ClickHouse, Envoy, HAProxy, ...) — файлом `templates/<service>.md`.
+- Новые шаблоны сервисов (Cassandra, ClickHouse, Envoy, HAProxy, ...) — файлом `templates/<service>.md`.
 - Лучшие дефолты для порогов на основе реальных SLO.
 - Дополнительные паттерны PromQL для трудноизвлекаемых сигналов.
 - Переводы документации.
@@ -206,8 +226,12 @@ Pull request'ы приветствуются. Самые полезные доп
 
 ## Дорожная карта
 
+- [x] Автогенерация файлов Prometheus alert-правил → сделано в 0.2.0
+- [x] CI/CD валидация скилла → сделано в 0.2.0
+- [x] Больше шаблонов (Elasticsearch, MongoDB, RabbitMQ, Patroni, Redis Cluster) → сделано в 0.2.0
 - [ ] Шаблонные drill-down дашборды (cluster → node → query).
-- [ ] Автогенерация файлов Prometheus alert-правил вместе с дашбордом.
+- [ ] Онлайн-каталог шаблонов, собранных сообществом.
+- [ ] Автоопределение типа сервиса по метрикам без service_description.
 - [ ] Манифесты provisioning (Grafana provisioning, Terraform).
 - [ ] Линтер, валидирующий JSON дашборда по конвенциям.
 
