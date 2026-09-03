@@ -63,7 +63,7 @@ validated_memory:
 
 ## Roles and modes
 
-The skill operates in **two primary modes**, determined by the
+The skill operates in **three modes**, determined by the
 `dashboard_action` parameter or the dialog context:
 
 ### Mode 1: Create (`dashboard_action: create`)
@@ -75,6 +75,22 @@ Full cycle from `scrape_configs` to a ready-to-import dashboard JSON.
 Modifies an existing dashboard while preserving the previous version's
 context. **Do not regenerate the dashboard from scratch** — apply only the
 requested changes.
+
+### Mode 3: Composite (`dashboard_action: create`, multiple scrape_configs)
+
+Creates a single dashboard containing sections for **multiple services**
+that belong to the same application stack — e.g. PostgreSQL + Redis +
+Kafka behind an NGINX API.
+
+**When to use:**
+- The user explicitly asks for a "composite dashboard" or "a single
+  dashboard covering everything in the stack."
+- The user provides multiple `scrape_configs` entries under the same app
+  name and says they're all part of one product.
+
+**When NOT to use:**
+- The services are independent and monitored by different teams.
+- The user is asking for a dashboard per service (default behavior).
 
 ---
 
@@ -588,6 +604,85 @@ groups:
 - **`thresholds`** — set reasonable thresholds in the metric's units.
 - **Group panels by section into `collapsed: true` rows** — improves
   navigation.
+
+## Composite dashboards (multiple services)
+
+When the user wants one dashboard for their entire stack (e.g. "my app
+uses PG + Redis + Kafka — give me one dashboard"), generate in composite
+mode.
+
+### Layout
+
+```
+Row 1 — Resources (shared)
+  ├─ Stat: Total CPU, Total Memory, Total Disk
+  ├─ Timeseries: CPU per instance, Memory per instance
+  └─ Table: All instances with service type column
+
+Row 2 — Service A (e.g. PostgreSQL)
+  ├─ Stat overview: QPS, Latency, Error Rate (A-specific)
+  ├─ Timeseries: A-specific panels
+  └─ Relevant topology/health panels
+
+Row 3 — Service B (e.g. Redis)
+  └─ (same pattern)
+
+Row 4 — Service C (e.g. Kafka)
+  └─ (same pattern)
+
+...etc.
+```
+
+### Structure rules
+
+1. **`grafanaSmith.mode`** = `"composite"`
+2. **`grafanaSmith.template`** = `"composite"` (no single service name)
+3. **Title** = `<AppName> - <Environment> Stack Overview`
+4. **UID** = `<environment>-<appname>-stack`
+5. **Panel IDs** are sequential across ALL services (no reuse)
+6. **Template variables** are grouped: first core variables (`$datasource`,
+   `$job`, `$instance`, `$interval`), then service-specific ones with a
+   prefix in their name and label to avoid collision — e.g.
+   `$pg_role`, `$redis_role`, `$kafka_topic`.
+7. Each service section opens with a **collapsed row** whose title includes
+   `<ServiceIcon> ServiceName` for visual scanning.
+
+### Resource Overview row
+
+The first row aggregates node-level metrics across all instances:
+
+| Panel | PromQL |
+|-------|--------|
+| CPU (avg across stack) | `avg by (instance) (100 - rate(node_cpu_seconds_total{mode="idle"}[$__rate_interval]) * 100)` |
+| Memory (worst node) | `max by (instance) ((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100)` |
+| Disk (worst node) | `max by (instance) ((node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100)` |
+| Network (total) | `sum(rate(node_network_receive_bytes_total[$__rate_interval])) + sum(rate(node_network_transmit_bytes_total[$__rate_interval]))` |
+| Instance table | `up` with `$job` filter, columns: instance, job, version, uptime |
+
+**Fallback:** if no node_exporter scrape_configs are provided, skip the
+Resource row and start directly with Service A.
+
+### Per-service section
+
+For each service in the stack, generate a **reduced set** of its template's
+mandatory panels — about 6–8 panels (not all 25 from the individual
+template). The priority order for what to include:
+
+1. Golden Signals row — 3–4 stat panels (Throughput, Latency p99, Error Rate, Saturation)
+2. One 2× panel timeseries showing the most critical pattern (e.g., replication lag for PG, consumer lag for Kafka)
+3. Instance health table
+
+The composite format is an **aggregation**, not a replacement —
+individual per-service dashboards are still generated when the user
+specifically asks for one.
+
+### Iteration
+
+Composite dashboards support the same iteration commands as single:
+add/remove a service section, rename titles, adjust thresholds. Parse
+structurally; `grafanaSmith.mode` is `"composite-iterate"` after
+iteration.
+
 
 ---
 
