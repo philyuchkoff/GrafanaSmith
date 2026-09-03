@@ -50,6 +50,9 @@ validated_memory:
   instance_roles:
     description: Instance roles inferred from labels (primary/replica/worker/leader)
     validation: Non-empty list when a cluster is present
+  auto_inferred:
+    description: Decisions made automatically from scrape_configs (topology, roles, multi-tenancy) so next iteration knows not to re-ask
+    validation: List of (decision, confidence) tuples
   key_sli:
     description: Key SLIs for the service (latency, error_rate, throughput, saturation)
     validation: "2-4 metrics from Golden Signals / RED / USE"
@@ -147,6 +150,41 @@ Possible values:
 - `cluster` — peer nodes (Cassandra, MongoDB replica set)
 - `sharded` — sharding (MongoDB sharded cluster, Vitess)
 - `stateless` — pool of identical instances behind a load balancer
+
+### Step 4: Auto-infer from scrape_configs (before asking)
+
+Before asking the user about topology, instance roles, or additional labels,
+**apply inference rules**. The goal: extract as much as possible from config,
+ask only when truly ambiguous.
+
+**Inference rules:**
+
+| From config | Infer | Confidence |
+|---|---|---|
+| `relabel_configs` sets `role: primary\|replica\|master\|slave` | Topology is `primary-replica` with roles detected | High |
+| `relabel_configs` sets `role: leader\|follower\|candidate` (etcd/consul) | Topology is `cluster` with leader election | High |
+| `relabel_configs` exposes `shard`, `shard_id`, `partition` | Topology includes sharding dimension | High |
+| `static_configs` has exactly 1 target, no `role`-like labels | Likely `single` — confirm with user only if service type supports replication | Medium |
+| `static_configs` has multiple targets with a `_meta_kubernetes_pod_label_*` that includes `statefulset` or `sts` | Cluster with pod identity — ask only the sharding/single distinction | Medium |
+| `job_name` contains `primary`, `master`, `leader`, `replica`, `slave`, `follower`, `standby` | Role-based deployment — infer topology accordingly | Medium |
+| `job_name` contains `cluster`, `node`, `peer` | Peer cluster — infer `cluster` topology | Medium |
+| No role/sharing labels at all, multiple targets | Likely `stateless` or `single` — ask the user | Low |
+| `namespace`, `cluster`, `datacenter` in labels | Multi-tenancy present — add corresponding template variable | High |
+| `__meta_kubernetes_pod_label_app` or `app_kubernetes_io_name` | Extract `$app` variable | High |
+| `metrics_path` contains `/probe` | Blackbox-exporter probing — ask the user if it's an HTTP/TCP/ICMP probe | — |
+| `metrics_path` is JMX-style (`/`, `/metrics`, jmx_config) for Kafka | Check `compatibility-matrix.md` for metric naming (JMX vs kafka_exporter) | — |
+
+**Action:**
+- If confidence is **High** for a decision — use it, do not ask.
+- If confidence is **Medium** — use it as default, mention it in the
+  description, offer the user a chance to correct.
+- If confidence is **Low** — ask the user (max 1 question).
+
+### After inference
+
+Construct the `instance_roles` list from the labels found. The validated
+memory section of the skill carries a `instance_roles` field that should
+be populated from inference output, not from user input alone.
 
 ---
 
