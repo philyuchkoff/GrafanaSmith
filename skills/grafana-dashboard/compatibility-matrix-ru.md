@@ -31,8 +31,8 @@
 | Strimzi operator / Cruise Control | `kafka_server_*` через JMX mBean-шаблоны |
 
 **Правило выбора**: смотреть `scrape_configs` → `metrics_path`. Если
-указывает на kafka_exporter `/metrics` — использовать danielqsj-стиль
-имен. Если JMX — попытаться определить mBean-шаблон из `relabel_configs`
+указывает на kafka_exporter `/metrics` — использовать его стиль имен.
+Если JMX — попытаться определить mBean-шаблон из `relabel_configs`
 или спросить пользователя.
 
 ## NGINX

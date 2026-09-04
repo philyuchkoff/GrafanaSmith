@@ -30,7 +30,7 @@ that SKILL.md can switch PromQL expressions accordingly.
 | Strimzi operator / Cruise Control | `kafka_server_*` via JMX mBean patterns |
 
 **Switch rule**: look at `scrape_configs` → `metrics_path`. If it points to
-the Kafka exporter `/metrics`, use danielqsj-style names. If JMX, try to
+the Kafka exporter `/metrics`, use kafka_exporter-style names. If JMX, try to
 infer the mBean pattern from `relabel_configs` or ask the user.
 
 ## NGINX
