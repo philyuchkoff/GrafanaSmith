@@ -51,8 +51,11 @@ def validate_panels(dashboard, errors):
             seen_ids.add(pid)
 
         ds = panel.get("datasource", {})
-        check(ds.get("type") == "prometheus" and ds.get("uid") == "${datasource}",
-              f"panel[{i}] (id={pid}) wrong datasource: {ds}", errors)
+        if ds.get("type") == "prometheus" and ds.get("uid") == "${datasource}":
+            continue
+        if panel.get("type") == "row":
+            continue
+        errors.append(f"panel[{i}] (id={pid}) wrong datasource: {ds}")
 
         gp = panel.get("gridPos", {})
         x = gp.get("x", 0)
