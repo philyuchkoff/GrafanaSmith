@@ -1,6 +1,6 @@
 # GrafanaSmith
 
-> Набор инструментов для SRE, которые создают дашборды Grafana для production-сервисов.
+> Инструмент для SRE, который создает дашборды Grafana.
 
 GrafanaSmith — это скилл для превращения Prometheus `scrape_configs` и краткого описания сервиса
 в production-ready дашборды Grafana.
@@ -9,10 +9,9 @@ GrafanaSmith — это скилл для превращения Prometheus `scr
 [`grafana-dashboard`](skills/grafana-dashboard/SKILL.md): opinionated-генератор, который знает
 метрики, панели и переменные, важные для самых распространённых инфраструктурных компонентов.
 Скилл написан в стандартном формате `SKILL.md` и **не привязан к конкретному движку**: он
-работает в [opencode](https://opencode.ai), Claude Code, Cursor и в любом другом агенте,
-умеющем загружать скиллы из файла `SKILL.md`.
+работает в OpenCode, Claude Code, Cursor и в любом другом агенте, умеющем загружать скиллы из файла `SKILL.md`.
 
-## Зачем GrafanaSmith
+## Зачем нужен GrafanaSmith
 
 Большинство дашбордов Grafana в дикой природе страдают от одних и тех же
 проблем:
@@ -87,7 +86,7 @@ GrafanaSmith превращает SRE best practices (RED, USE, Golden Signals) 
 - `unit` задан на каждой панели (`reqps`, `s`, `percentunit`, `bytes`, ...);
 - `legendFormat` на каждой серии;
 - стабильная конвенция `uid` (`<environment>-<service>-<purpose>`);
-- блок метаданных `grafanaSmith` с версией, шаблоном, временем генерации;
+- блок метаданных `grafanaSmith` с версией, шаблоном, режимом, типом источника данных и временем генерации;
 - alert rules (PrometheusRule YAML) с severity labels и
   `annotations.runbook_url` при наличии Confluence.
 
@@ -224,7 +223,7 @@ Pull request'ы приветствуются. Самые полезные доп
 Открывайте PR с новым шаблоном в
 `skills/grafana-dashboard/templates/<service>.md`.
 
-## Дорожная карта
+## В планах
 
 - [x] Автогенерация файлов Prometheus alert-правил → сделано в 0.2.0
 - [x] CI/CD валидация скилла → сделано в 0.2.0

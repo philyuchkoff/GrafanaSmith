@@ -51,28 +51,28 @@ infer the mBean pattern from `relabel_configs` or ask the user.
 
 No version-specific renames recorded yet.
 
-## OpenSearch / Elasticsearch (planned)
+## OpenSearch / Elasticsearch
 
 | Exporter | Metric naming |
 |:-:|---|
 | elasticsearch_exporter (prometheus-community) | `elasticsearch_*` |
 | OpenSearch-exporter | `opensearch_*` |
 
-## MongoDB (planned)
+## MongoDB
 
 | Exporter | Metric naming |
 |:-:|---|
 | mongodb_exporter (percona) | `mongodb_*` |
 | MongoDB Atlas | `mongodb_atlas_*` |
 
-## RabbitMQ (planned)
+## RabbitMQ
 
 | Exporter | Metric naming |
 |:-:|---|
 | rabbitmq_exporter (kbudde) | `rabbitmq_*` |
 | RabbitMQ built-in | `rabbitmq_*` |
 
-## Patroni / PostgreSQL-HA (planned)
+## Patroni / PostgreSQL-HA
 
 Patroni exposes its own REST endpoint for health. The `pg` prefix metrics
 come from postgres_exporter running alongside Patroni. There is no
